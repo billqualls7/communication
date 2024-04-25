@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/communication.h
+iostream
+-
+boost/asio.hpp
+../include/boost/asio.hpp
+
+/home/wy/code/communication/src/demo.cpp
+communication.h
+/home/wy/code/communication/src/communication.h
+
