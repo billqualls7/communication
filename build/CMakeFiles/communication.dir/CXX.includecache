@@ -11,6 +11,8 @@ iostream
 -
 boost/asio.hpp
 ../include/boost/asio.hpp
+string
+-
 
 /home/wy/code/communication/src/communication.cpp
 communication.h
