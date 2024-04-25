@@ -6,5 +6,5 @@ CXX_FLAGS = -g   -std=gnu++14
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/wy/code/communication/include 
+CXX_INCLUDES = -I/home/wy/code/communication/include -I/home/wy/code/communication/pthread 
 

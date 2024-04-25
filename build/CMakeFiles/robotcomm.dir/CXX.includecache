@@ -15,12 +15,14 @@ string
 -
 boost/bind.hpp
 -
+
+../include/robotcomm.h
+communication.h
+../include/communication.h
 boost/asio/streambuf.hpp
 -
-boost/array.hpp
--
 
-/home/wy/code/communication/src/communication.cpp
-communication.h
-/home/wy/code/communication/src/communication.h
+/home/wy/code/communication/src/robotcomm.cpp
+robotcomm.h
+/home/wy/code/communication/src/robotcomm.h
 

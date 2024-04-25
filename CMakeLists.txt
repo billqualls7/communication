@@ -14,12 +14,21 @@ enable_testing()
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 
+find_package(Threads REQUIRED)
+
+
 add_library(communication STATIC  src/communication.cpp)
-target_link_libraries(communication PUBLIC ${Boost_LIBRARIES})
-target_include_directories(communication PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(communication PUBLIC ${Boost_LIBRARIES} pthread)
+target_include_directories(communication PUBLIC ${Boost_INCLUDE_DIRS} pthread)
+
+# add_library(robotcomm STATIC  src/robotcomm.cpp)
+# target_link_libraries(robotcomm PUBLIC communication)
+
+
+
 
 add_executable(demo src/demo.cpp )
-target_link_libraries(demo communication )
+target_link_libraries(demo communication)
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

@@ -13,8 +13,18 @@ boost/asio.hpp
 ../include/boost/asio.hpp
 string
 -
+boost/bind.hpp
+-
+boost/asio/streambuf.hpp
+-
+boost/array.hpp
+-
 
 /home/wy/code/communication/src/demo.cpp
 communication.h
 /home/wy/code/communication/src/communication.h
+iostream
+-
+chrono
+-
 
