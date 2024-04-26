@@ -63,6 +63,8 @@
         "random": "cpp",
         "set": "cpp",
         "string": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "forward_list": "cpp",
+        "unordered_set": "cpp"
     }
 }

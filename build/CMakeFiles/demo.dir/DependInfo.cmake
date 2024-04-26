@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/wy/code/communication/src/demo.cpp" "/home/wy/code/communication/build/CMakeFiles/demo.dir/src/demo.cpp.o"
+  "/home/rqh/wheel4robot/communication/src/demo.cpp" "/home/rqh/wheel4robot/communication/build/CMakeFiles/demo.dir/src/demo.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -16,7 +16,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/wy/code/communication/build/CMakeFiles/communication.dir/DependInfo.cmake"
+  "/home/rqh/wheel4robot/communication/build/CMakeFiles/communication.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

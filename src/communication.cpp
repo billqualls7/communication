@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-25 09:22:38
+ * @LastEditTime: 2024-04-26 17:50:29
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -15,7 +15,7 @@ void say_hello(){
 
 
 
-Communication::Communication(boost::asio::io_service& io_service, const std::string& host, short port)
+Communication::Communication(boost::asio::io_service& io_service, const std::string& host, long port)
                             : resolver_(io_service), socket_(io_service)
 {
     std::cout<<"IP:"<<host<<" port:"<<port<<std::endl;
@@ -61,7 +61,7 @@ void Communication::handle_resolve(const boost::system::error_code& error,
 
 }
 
-void Communication::do_connect(const std::string& host, short port)
+void Communication::do_connect(const std::string& host, long port)
 {   
     std::cout << "连接中..." << std::endl;
     tcp::resolver::query query(host, std::to_string(port));
@@ -82,12 +82,39 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
     if (!error) {
         try {
             // 从缓冲区中提取数据
-            std::cout << "Received data: " << read_buffer_.data() << std::endl;            
+            // std::cout << "Received data: " << read_buffer_.data() << std::endl;
+            
+            
+            char* data_ptr = read_buffer_.data();
+            if (data_ptr[0] == 0x05){
+                if (data_ptr[5] == 0x03 && data_ptr[6] == 0x0D) //机器人状态
+                {
+                    std::array<char, 64> subarray_;
+                    std::copy(read_buffer_.begin() + 20, read_buffer_.end(), subarray_.begin());
+                    mutex_lock.lock();
+                    read_data_queue_.push(subarray_);
+                    mutex_lock.unlock();
+
+                } 
+                // auto hexbuffer = static_cast<int>(data_ptr[0]);
+                // std::cout << std::showbase << std::hex << hexbuffer << std::endl;
+                // std::cout << read_data_queue_.size() << std::endl;
+
+
+            }
+
+            // std::cout << "Received data: " << static_cast<int>(read_buffer_.data()[0])<< std::endl;            
+            
+            // std::cout << std::showbase << std::hex << (data_ptr[0] + data_ptr[1] + data_ptr[2] +data_ptr[3]) << std::endl;
             // 处理收到的数据
+
+
+            // std::cout << "bytes_transferred: " << bytes_transferred << std::endl;
 
             // 清空缓冲区以准备下一次读取
 
             // 继续读取更多数据
+            status_analyze();
             async_read();
         } catch (std::exception& e) {
             std::cerr << "Exception in handle_read: " << e.what() << std::endl;
@@ -104,6 +131,28 @@ void Communication::async_read()
             boost::bind(&Communication::handle_read, this,
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
+}
+
+
+
+
+void Communication::status_analyze()
+{
+    if (read_data_queue_.size() > 1)
+    {   
+        mutex_lock.lock();
+
+        robot_message.Battery = static_cast<int>(read_data_queue_.front().data()[3]);
+        read_data_queue_.pop();
+        mutex_lock.unlock();
+
+        std::cout << robot_message.Battery << std::endl;
+        std::cout << std::showbase << std::hex << robot_message.Battery << std::endl;
+
+
+
+    }
+    
 }
 
 // void Communication::async_read(){}

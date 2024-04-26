@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -8,6 +8,8 @@
 
 ../include/communication.h
 iostream
+-
+iomanip
 -
 boost/asio.hpp
 ../include/boost/asio.hpp
@@ -19,10 +21,14 @@ boost/asio/streambuf.hpp
 -
 boost/array.hpp
 -
+queue
+-
+mutex
+-
 
-/home/wy/code/communication/src/demo.cpp
+/home/rqh/wheel4robot/communication/src/demo.cpp
 communication.h
-/home/wy/code/communication/src/communication.h
+/home/rqh/wheel4robot/communication/src/communication.h
 iostream
 -
 chrono

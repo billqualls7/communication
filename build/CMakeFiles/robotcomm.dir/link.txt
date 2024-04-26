@@ -1,2 +1,0 @@
-/usr/bin/ar qc librobotcomm.a  CMakeFiles/robotcomm.dir/src/robotcomm.cpp.o
-/usr/bin/ranlib librobotcomm.a

@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/wy/code/communication/src/communication.cpp" "/home/wy/code/communication/build/CMakeFiles/communication.dir/src/communication.cpp.o"
+  "/home/rqh/wheel4robot/communication/src/communication.cpp" "/home/rqh/wheel4robot/communication/build/CMakeFiles/communication.dir/src/communication.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
