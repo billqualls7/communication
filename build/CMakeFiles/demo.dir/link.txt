@@ -1,1 +1,0 @@
-/usr/bin/g++    -rdynamic CMakeFiles/demo.dir/src/demo.cpp.o  -o demo libcommunication.a -lboost_system -lboost_filesystem -lpthread 
