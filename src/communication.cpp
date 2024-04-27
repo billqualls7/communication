@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-26 06:00:31
+ * @LastEditTime: 2024-04-27 17:02:27
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -86,6 +86,15 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
             // 从缓冲区中提取数据
             // std::cout << "Received data: " << read_buffer_.data() << std::endl;
             
+            boost::posix_time::ptime now_read_time = boost::posix_time::microsec_clock::universal_time();
+            if (last_read_start_time_ != boost::posix_time::ptime()) {
+                boost::posix_time::time_duration diff = now_read_time - last_read_start_time_;
+                diff_time = diff.total_milliseconds();
+                // std::cout << std::dec << "Read interval: " << static_cast<int>(time) << " ms" << std::endl;
+            }
+            last_read_start_time_ = now_read_time;
+
+
             
             char* data_ptr = read_buffer_.data();
             if (data_ptr[0] == 0x05){
@@ -132,7 +141,8 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
 }
 
 void Communication::async_read()
-{
+{   
+    last_read_start_time_ = boost::posix_time::microsec_clock::universal_time();
     socket_.async_read_some(boost::asio::buffer(read_buffer_),
             boost::bind(&Communication::handle_read, this,
             boost::asio::placeholders::error,
@@ -142,24 +152,7 @@ void Communication::async_read()
 
 
 
-void Communication::status_analyze()
-{
-    if (read_data_queue_.size() > 1)
-    {   
-        mutex_lock.lock();
 
-        robot_message.Battery = (read_data_queue_.front().data()[3]);
-        read_data_queue_.pop();
-        mutex_lock.unlock();
-
-        // std::cout << static_cast<uint8_t>(robot_message.Battery) << std::endl;
-        std::cout << std::showbase << std::hex << static_cast<int>(robot_message.Battery) << std::endl;
-
-
-
-    }
-    
-}
 
 // void Communication::async_read(){}
 // void Communication::async_write(){}
@@ -213,4 +206,95 @@ void Communication::handle_timeout(const boost::system::error_code& error)
     }
     
 
+}
+
+
+
+void Communication::status_analyze()
+{
+    if (read_data_queue_.size() == 1 && first_read_flag){
+        mutex_lock.lock();
+        first_read_buffer_ptr_  = read_data_queue_.front().data();
+        mutex_lock.unlock();
+        std::cout<<"first read buffer"<<std::endl;
+
+        float f_x_ = Byte_to_Float((first_read_buffer_ptr_ + X_PTR_));
+        float f_y_ = Byte_to_Float((first_read_buffer_ptr_ + Y_PTR_));
+        float f_theta_ = Byte_to_Float((first_read_buffer_ptr_ + THETA_PTR_));
+
+
+        last_x_ = f_x_;
+        last_y_ = f_y_;
+        last_theta_ = f_theta_;
+
+        first_read_flag = false;
+
+    }
+
+
+
+    if (read_data_queue_.size() > 1)
+    {   
+        mutex_lock.lock();
+        read_data_queue_.pop();
+        auto now_read_buffer_ptr_  = read_data_queue_.front().data();
+        mutex_lock.unlock();
+        
+        auto x = Byte_to_Float((now_read_buffer_ptr_ + X_PTR_));
+        auto y = Byte_to_Float((now_read_buffer_ptr_ + Y_PTR_));
+        auto theta = Byte_to_Float((now_read_buffer_ptr_ + THETA_PTR_));
+
+        robot_message.x = x/1000;
+        robot_message.y = y/1000;
+        robot_message.theta = theta;
+        robot_message.v_x = (x-last_x_)/diff_time;
+        robot_message.v_y = (y-last_y_)/diff_time;
+        robot_message.v_theta = (theta-last_theta_)/1000/diff_time;
+
+
+
+        std::cout << std::dec << "x: " << (x) << " mm" << std::endl;
+        std::cout << std::dec << "y: " << (y) << " mm" << std::endl;
+        std::cout << std::dec << "theta: " << (theta) << " rad" << std::endl;
+        std::cout << std::dec << "v_theta: " << (robot_message.v_theta) << " rad/s" << std::endl;
+
+        std::cout << std::dec << "Read interval: " << diff_time << " ms" << std::endl;
+
+
+        // std::cout << std::hex <<  now_read_buffer_ptr_[3] << std::endl;
+        last_x_ = x;
+        last_y_ = y;
+        last_theta_ = theta;
+
+
+
+
+    }
+    
+}
+
+
+
+float Communication::Byte_to_Float(char *p)
+{
+	float float_data=0;
+	unsigned long longdata = 0;
+	longdata = (*p<< 24) + (*(p+1) << 16) + (*(p + 2) << 8) + (*(p + 3) << 0);
+	float_data = *(float*)&longdata;
+	return float_data;
+}
+
+
+
+unsigned char* Float_to_Byte(float f)
+{
+	float float_data = 0;
+    unsigned char byte[4];
+	unsigned long longdata = 0;
+	longdata = *(unsigned long*)&f;           //注意，会丢失精度
+	byte[0] = (longdata & 0xFF000000) >> 24;
+	byte[1] = (longdata & 0x00FF0000) >> 16;
+	byte[2] = (longdata & 0x0000FF00) >> 8;
+	byte[3] = (longdata & 0x000000FF);
+	return byte;
 }
