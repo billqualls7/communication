@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:35:46
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-27 16:43:51
+ * @LastEditTime: 2024-04-28 08:29:04
  * @FilePath: /code/communication/include/communication.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -64,6 +64,16 @@ struct RobotStatusMessage
 };
 
 
+struct Send_VelMessage
+{
+    float v_x;
+    float v_y;
+    float v_theta;
+
+    std::vector<char> Head_Mess = {0x05, 0x0A, 0x05, 0x0A};
+
+
+};
 
 
 
