@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-27 17:02:27
+ * @LastEditTime: 2024-04-29 08:57:35
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -297,4 +297,38 @@ unsigned char* Float_to_Byte(float f)
 	byte[2] = (longdata & 0x0000FF00) >> 8;
 	byte[3] = (longdata & 0x000000FF);
 	return byte;
+}
+
+
+
+unsigned char Communication::xorChecksum(const unsigned char *data, size_t length) {
+    unsigned char checksum = 0;
+    for (size_t i = 0; i < length; ++i) {
+        checksum ^= data[i];
+    }
+    return checksum;
+}
+
+
+std::vector<unsigned char> Communication::concatenateKnownLengthVectors(const std::vector<std::vector<unsigned char>>& vecs, size_t totalLength) {
+    std::vector<unsigned char> result;
+    result.reserve(totalLength);
+
+    size_t currentLength = 0; // 当前已拼接的长度
+
+    // 遍历所有向量并拼接它们
+    for (const auto& vec : vecs) {
+        // 计算可以拼接的当前向量的最大长度
+        size_t vecSize = std::min(vec.size(), totalLength - currentLength);
+        // 插入当前向量到结果向量
+        result.insert(result.end(), vec.begin(), vec.begin() + vecSize);
+        // 更新当前已拼接的长度
+        currentLength += vecSize;
+        // 如果已经达到总长度，就不需要继续拼接了
+        if (currentLength == totalLength) {
+            break;
+        }
+    }
+
+    return result;
 }

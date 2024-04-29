@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:35:46
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-28 08:29:04
+ * @LastEditTime: 2024-04-29 08:51:22
  * @FilePath: /code/communication/include/communication.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -64,13 +64,62 @@ struct RobotStatusMessage
 };
 
 
+
+    // std::vector<char> Package_Sequence_Num = {0x01,0x00}; //需要赋值 小于492字节，序号为1
+    // std::vector<char> Finall_Package_Flag = {0x01};
+    // 这个组合不能超过492字节
+
 struct Send_VelMessage
 {
     float v_x;
     float v_y;
     float v_theta;
 
-    std::vector<char> Head_Mess = {0x05, 0x0A, 0x05, 0x0A};
+
+    std::vector<unsigned char> Head_Mess = {0x05, 0x0A, 0x05, 0x0A};
+    std::vector<unsigned char> Commuincation_flag = {0x01}; // ?
+    std::vector<unsigned char> Command = {0x13, 0x0A, 0x00, 0x00};
+    std::vector<unsigned char> Len_Mess = {0x0C, 0x00};
+    std::vector<unsigned char> Package_Sequence_Num = {0x01,0x00}; 
+    std::vector<unsigned char> Finall_Package_Flag = {0x01};// 
+
+    std::vector<unsigned char> Send_Vel_Head = { 0x05, 0x0A, 0x05, 0x0A,
+                                        0x01,
+                                        0x13, 0x0A, 0x00, 0x00,
+                                        0x0C, 0x00,
+                                        0x01, 0x00,
+                                        0x01}; //专属14bytes
+
+    std::vector<unsigned char> BCC_Check_MessBody = {};   // 待更新
+    std::vector<unsigned char> Keep_bytes = {0x00,0x00,0x00,0x00};
+    std::vector<unsigned char> BCC_Check_Front19 = {}; // 待更新
+
+    std::vector<unsigned char> v_x_bytes = {0x00,0x00,0x00,0x00};
+    std::vector<unsigned char> v_y_bytes = {0x00,0x00,0x00,0x00};
+    std::vector<unsigned char> v_theta_bytes = {0x00,0x00,0x00,0x00};
+
+    std::vector<std::vector<unsigned char>> Vel_Mess = {Send_Vel_Head, BCC_Check_MessBody, 
+                                               Keep_bytes, BCC_Check_Front19,
+                                               v_x_bytes,
+                                               v_y_bytes,
+                                               v_theta_bytes};
+
+    uint8_t totlalength = 32;
+
+    Send_VelMessage() {
+
+        updateVelMess();
+    }
+
+
+    void updateVelMess() {
+        Vel_Mess = {Send_Vel_Head, BCC_Check_MessBody, 
+                    Keep_bytes, BCC_Check_Front19,
+                    v_x_bytes,
+                    v_y_bytes,
+                    v_theta_bytes};
+    }
+
 
 
 };
@@ -125,6 +174,9 @@ public:
     ~Communication();
     void async_read();
     void status_analyze();
+    unsigned char xorChecksum(const unsigned char *data, size_t length);
+    std::vector<unsigned char> concatenateKnownLengthVectors(const std::vector<std::vector<unsigned char>>& vecs, size_t totalLength);
+
     // virtual void async_write() = 0;
 
     
