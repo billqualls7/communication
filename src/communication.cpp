@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-29 08:57:35
+ * @LastEditTime: 2024-05-04 08:09:33
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -37,6 +37,7 @@ void Communication::handle_connect(const boost::system::error_code& error)
             std::cout << "连接成功！！！" << std::endl;// 连接成功
             async_read();
             timer_send();
+            ConsistTCPMessageVel();
 
         }
     else {
@@ -158,11 +159,11 @@ void Communication::async_read()
 // void Communication::async_write(){}
 
 
-
+// 异步发送速度查询指令数据
 void Communication::query()
 {
 
-    // 异步发送数据
+    
     boost::asio::async_write(socket_, boost::asio::buffer(query_data),
         boost::bind(&Communication::handle_query, this, 
         boost::asio::placeholders::error, 
@@ -274,36 +275,53 @@ void Communication::status_analyze()
 }
 
 
-
-float Communication::Byte_to_Float(char *p)
+// 大端模式
+float Communication::Byte_to_Float(const char *p)
 {
-	float float_data=0;
-	unsigned long longdata = 0;
-	longdata = (*p<< 24) + (*(p+1) << 16) + (*(p + 2) << 8) + (*(p + 3) << 0);
-	float_data = *(float*)&longdata;
-	return float_data;
+	union {
+            uint32_t i;
+            float f;
+        } float_union;
+    float out_float;    
+    uint32_t longdata = (static_cast<uint32_t>(p[0]) << 24) |
+                        (static_cast<uint32_t>(p[1]) << 16) |
+                        (static_cast<uint32_t>(p[2]) << 8) |
+                            static_cast<uint32_t>(p[3]);
+
+    float_union.i = longdata; // 将整数赋值给union的整数成员
+
+    
+    out_float = float_union.f;
+    return out_float; // 然后获取浮点数
 }
 
 
+// 大端模式
+std::vector<unsigned char> Communication::Float_to_Byte(const float f) {
+ // 使用union来避免违反严格别名规则
+    union {
+        float floatValue;
+        unsigned char bytes[4];
+    } floatUnion;
 
-unsigned char* Float_to_Byte(float f)
-{
-	float float_data = 0;
-    unsigned char byte[4];
-	unsigned long longdata = 0;
-	longdata = *(unsigned long*)&f;           //注意，会丢失精度
-	byte[0] = (longdata & 0xFF000000) >> 24;
-	byte[1] = (longdata & 0x00FF0000) >> 16;
-	byte[2] = (longdata & 0x0000FF00) >> 8;
-	byte[3] = (longdata & 0x000000FF);
-	return byte;
+    // 将float值赋给union的float部分
+    floatUnion.floatValue = f;
+
+    // 创建一个vector来存储字节
+    std::vector<unsigned char> bytes;
+
+    // 将union的bytes数组内容复制到vector中
+    for (int i = 0; i < 4; ++i) {
+        bytes.push_back(floatUnion.bytes[3-i]);
+    }
+
+    return bytes;
 }
 
 
-
-unsigned char Communication::xorChecksum(const unsigned char *data, size_t length) {
+unsigned char Communication::xorChecksum(const std::vector<unsigned char>& data) {
     unsigned char checksum = 0;
-    for (size_t i = 0; i < length; ++i) {
+    for (size_t i = 0; i < data.size(); ++i) {
         checksum ^= data[i];
     }
     return checksum;
@@ -331,4 +349,48 @@ std::vector<unsigned char> Communication::concatenateKnownLengthVectors(const st
     }
 
     return result;
+}
+
+
+
+void Communication::ConsistTCPMessageVel(){
+    send_velstuct.v_x = 0.5;
+    send_velstuct.v_y = 0.1;
+    send_velstuct.v_theta = -0.5;
+
+    send_velstuct.v_x_bytes = Float_to_Byte(send_velstuct.v_x);
+    send_velstuct.v_y_bytes = Float_to_Byte(send_velstuct.v_y);
+    send_velstuct.v_theta_bytes = Float_to_Byte(send_velstuct.v_theta);
+
+    std::vector<std::vector<unsigned char>> vel_body = {send_velstuct.v_x_bytes,
+                                                        send_velstuct.v_y_bytes,
+                                                        send_velstuct.v_theta_bytes};
+    std::vector<unsigned char> vel_body_vector = concatenateKnownLengthVectors(vel_body,12);
+    unsigned char check_velbody = xorChecksum(vel_body_vector);
+    send_velstuct.BCC_Check_MessBody.push_back(check_velbody);
+
+    std::vector<std::vector<unsigned char>> frontmess19 = {send_velstuct.Send_Vel_Head, 
+                                                           send_velstuct.BCC_Check_MessBody, 
+                                                           send_velstuct.Keep_bytes};
+    std::vector<unsigned char> frontmess19_vector = concatenateKnownLengthVectors(frontmess19,19);
+    unsigned char check_frontmess19 = xorChecksum(frontmess19_vector);
+    send_velstuct.BCC_Check_Front19.push_back(check_frontmess19);
+
+    std::vector<std::vector<unsigned char>> full_velmess = {
+                                                            frontmess19_vector,
+                                                            send_velstuct.BCC_Check_Front19,
+                                                            vel_body_vector
+                                                            };
+
+    std::vector<unsigned char> full_velmess_vector = concatenateKnownLengthVectors(full_velmess,32);
+    for (unsigned char byte : full_velmess_vector) {
+            std::cout << std::hex << static_cast<int>(byte) << " ";
+         }
+    std::cout << std::endl;
+    std::cout << std::dec << full_velmess_vector.size() << std::endl;
+
+
+
+
+
 }

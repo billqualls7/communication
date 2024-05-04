@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359qq.com
  * @Date: 2024-04-24 19:35:27
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-04-29 08:56:07
+ * @LastEditTime: 2024-05-04 05:29:16
  * @FilePath: /code/communication/src/demo.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -46,11 +46,48 @@ std::vector<unsigned char> concatenateKnownLengthVectors(const std::vector<std::
 }
 
 
+void Float_to_Byte(const float f, unsigned char* byte) {
+    // 使用union来安全地重新解释浮点数的内存表示
+    union {
+        float f;
+        uint32_t i;
+    } float_union;
+
+    float_union.f = f; // 将浮点数赋值给union的浮点数成员
+    uint32_t longdata = float_union.i; // 然后安全地获取整数表示
+
+    // 使用整数的位操作来设置字节数组
+    byte[0] = (longdata & 0xFF000000) >> 24;
+    byte[1] = (longdata & 0x00FF0000) >> 16;
+    byte[2] = (longdata & 0x0000FF00) >> 8;
+    byte[3] = longdata & 0x000000FF;
+}
+
+float Byte_to_Float(const char *p) {
+    // 使用union来安全地重新解释字节的内存表示
+	union {
+            uint32_t i;
+            float f;
+        } float_union;
+    float out_float;    
+    uint32_t longdata = (static_cast<uint32_t>(p[0]) << 24) |
+                        (static_cast<uint32_t>(p[1]) << 16) |
+                        (static_cast<uint32_t>(p[2]) << 8) |
+                            static_cast<uint32_t>(p[3]);
+
+    float_union.i = longdata; // 将整数赋值给union的整数成员
+
+    
+    out_float = float_union.f;
+    return out_float; // 然后获取浮点数
+}
+
+
 int main(int, char**){
    say_hello();
-   // boost::asio::io_service io_service;
-   // Communication TCPComm(io_service, "192.168.51.114",1234);
-   // io_service.run();
+   boost::asio::io_service io_service;
+   Communication TCPComm(io_service, "8.135.10.183",39294);
+   io_service.run();
 
    unsigned char packet[] = {0x05,0x0a,0x05,0x0a,
                              0x01,0x03,0x0d,0x00,
@@ -90,8 +127,22 @@ int main(int, char**){
 
 
 
+    float myFloat = 3.14159;
+    unsigned char byte[4]; // 定义一个字节数组来存储转换结果
 
+    Float_to_Byte(myFloat, byte);
+    for (int i = 0; i < 4; i++) {
+        std::cout << std::hex << static_cast<int>(byte[i]) << " ";
 
+    }
+    std::cout << std::endl;
+
+    // float float_data;
+    // char cbyte = static_cast<char>(byte);
+    // float_data = Byte_to_Float(byte);
+    // std::cout<<std::dec<< float_data<<std::endl;
+
+    
 
 
 
