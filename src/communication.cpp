@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-04 08:09:33
+ * @LastEditTime: 2024-05-06 20:08:18
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -16,7 +16,7 @@ void say_hello(){
 
 
 
-Communication::Communication(boost::asio::io_service& io_service, const std::string& host, long port)
+Communication::Communication(boost::asio::io_service& io_service, const std::string& host, const std::string& port)
                             : resolver_(io_service), socket_(io_service), timer_(io_service)
 {
     std::cout<<"IP:"<<host<<" port:"<<port<<std::endl;
@@ -37,7 +37,7 @@ void Communication::handle_connect(const boost::system::error_code& error)
             std::cout << "连接成功！！！" << std::endl;// 连接成功
             async_read();
             timer_send();
-            ConsistTCPMessageVel();
+            // ConsistTCPMessageVel();
 
         }
     else {
@@ -64,10 +64,10 @@ void Communication::handle_resolve(const boost::system::error_code& error,
 
 }
 
-void Communication::do_connect(const std::string& host, long port)
+void Communication::do_connect(const std::string& host, const std::string& port)
 {   
     std::cout << "连接中..." << std::endl;
-    tcp::resolver::query query(host, std::to_string(port));
+    tcp::resolver::query query(host, port);
     resolver_.async_resolve(query,
                         boost::bind(&Communication::handle_resolve, this,
                         boost::asio::placeholders::error, 
@@ -155,8 +155,10 @@ void Communication::async_read()
 
 
 
-// void Communication::async_read(){}
-// void Communication::async_write(){}
+
+
+
+
 
 
 // 异步发送速度查询指令数据
@@ -353,28 +355,28 @@ std::vector<unsigned char> Communication::concatenateKnownLengthVectors(const st
 
 
 
-void Communication::ConsistTCPMessageVel(){
+void Communication::ConsistTCPMessageVel(const Send_VelMessage& sendvelmsg){
     send_velstuct.v_x = 0.5;
     send_velstuct.v_y = 0.1;
     send_velstuct.v_theta = -0.5;
 
-    send_velstuct.v_x_bytes = Float_to_Byte(send_velstuct.v_x);
-    send_velstuct.v_y_bytes = Float_to_Byte(send_velstuct.v_y);
-    send_velstuct.v_theta_bytes = Float_to_Byte(send_velstuct.v_theta);
+    send_velstuct.v_x_bytes = Float_to_Byte(sendvelmsg.v_x);
+    send_velstuct.v_y_bytes = Float_to_Byte(sendvelmsg.v_y);
+    send_velstuct.v_theta_bytes = Float_to_Byte(sendvelmsg.v_theta);
 
     std::vector<std::vector<unsigned char>> vel_body = {send_velstuct.v_x_bytes,
                                                         send_velstuct.v_y_bytes,
                                                         send_velstuct.v_theta_bytes};
     std::vector<unsigned char> vel_body_vector = concatenateKnownLengthVectors(vel_body,12);
     unsigned char check_velbody = xorChecksum(vel_body_vector);
-    send_velstuct.BCC_Check_MessBody.push_back(check_velbody);
+    send_velstuct.BCC_Check_MessBody[0] = check_velbody;
 
     std::vector<std::vector<unsigned char>> frontmess19 = {send_velstuct.Send_Vel_Head, 
                                                            send_velstuct.BCC_Check_MessBody, 
                                                            send_velstuct.Keep_bytes};
     std::vector<unsigned char> frontmess19_vector = concatenateKnownLengthVectors(frontmess19,19);
     unsigned char check_frontmess19 = xorChecksum(frontmess19_vector);
-    send_velstuct.BCC_Check_Front19.push_back(check_frontmess19);
+    send_velstuct.BCC_Check_Front19[0] = check_frontmess19;
 
     std::vector<std::vector<unsigned char>> full_velmess = {
                                                             frontmess19_vector,
@@ -387,10 +389,43 @@ void Communication::ConsistTCPMessageVel(){
             std::cout << std::hex << static_cast<int>(byte) << " ";
          }
     std::cout << std::endl;
-    std::cout << std::dec << full_velmess_vector.size() << std::endl;
+
+    
+
+    sendcmdvel(full_velmess_vector);
+
+    // std::cout << std::dec << full_velmess_vector.size() << std::endl;
 
 
 
 
+
+}
+
+
+
+
+
+
+// 异步发送速度指令
+void Communication::sendcmdvel(const std::vector<unsigned char>& data)
+{
+
+    
+    boost::asio::async_write(socket_, boost::asio::buffer(data),
+        boost::bind(&Communication::handle_sendcmdvel, this, 
+        boost::asio::placeholders::error, 
+        boost::asio::placeholders::bytes_transferred));
+
+
+
+}
+
+
+void Communication::handle_sendcmdvel(const boost::system::error_code& error, std::size_t bytes_transferred){
+    if(error){
+
+        std::cerr << "Failed to query robot status: " << error.message() << std::endl;
+    }
 
 }

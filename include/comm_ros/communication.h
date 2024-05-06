@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:35:46
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-04 05:14:07
+ * @LastEditTime: 2024-05-06 20:07:29
  * @FilePath: /code/communication/include/communication.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -90,9 +90,9 @@ struct Send_VelMessage
                                         0x01, 0x00,
                                         0x01}; //专属14bytes
 
-    std::vector<unsigned char> BCC_Check_MessBody = {};   // 待更新
+    std::vector<unsigned char> BCC_Check_MessBody = {0x00};   // 待更新
     std::vector<unsigned char> Keep_bytes = {0x00,0x00,0x00,0x00};
-    std::vector<unsigned char> BCC_Check_Front19 = {}; // 待更新
+    std::vector<unsigned char> BCC_Check_Front19 = {0x00}; // 待更新
 
     std::vector<unsigned char> v_x_bytes;
     std::vector<unsigned char> v_y_bytes;
@@ -147,7 +147,7 @@ private:
     float last_theta_;
 
 
-    void do_connect(const std::string& host, long port);
+    void do_connect(const std::string& host, const std::string& port);
     void handle_resolve(const boost::system::error_code& error, 
                         tcp::resolver::iterator endpoint_iterator);
     void handle_connect(const boost::system::error_code& error);
@@ -160,6 +160,8 @@ private:
     void handle_timeout(const boost::system::error_code& error);
     float Byte_to_Float(const char *p);
     std::vector<unsigned char> Float_to_Byte(const float f);
+    void handle_sendcmdvel(const boost::system::error_code& error, std::size_t bytes_transferred);
+    void sendcmdvel(const std::vector<unsigned char>& data);
     
 
 public:
@@ -174,13 +176,13 @@ public:
     RobotStatusMessage robot_message;
     Send_VelMessage send_velstuct;
     
-    Communication(boost::asio::io_service& io_service, const std::string& host, long port);
+    Communication(boost::asio::io_service& io_service, const std::string& host, const std::string& port);
     ~Communication();
     void async_read();
     void status_analyze();
     unsigned char xorChecksum(const std::vector<unsigned char>& data);
     std::vector<unsigned char> concatenateKnownLengthVectors(const std::vector<std::vector<unsigned char>>& vecs, size_t totalLength);
-    void ConsistTCPMessageVel();
+    void ConsistTCPMessageVel(const Send_VelMessage& sendvelmsg);
     // virtual void async_write() = 0;
 
     

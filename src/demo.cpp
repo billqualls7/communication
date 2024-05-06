@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359qq.com
  * @Date: 2024-04-24 19:35:27
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-04 05:29:16
+ * @LastEditTime: 2024-05-06 19:40:47
  * @FilePath: /code/communication/src/demo.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -86,7 +86,7 @@ float Byte_to_Float(const char *p) {
 int main(int, char**){
    say_hello();
    boost::asio::io_service io_service;
-   Communication TCPComm(io_service, "8.135.10.183",39294);
+   Communication TCPComm(io_service, "8.135.10.183","39294");
    io_service.run();
 
    unsigned char packet[] = {0x05,0x0a,0x05,0x0a,
