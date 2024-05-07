@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-06 20:08:18
+ * @LastEditTime: 2024-05-07 12:22:31
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -130,7 +130,7 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
             // 清空缓冲区以准备下一次读取
 
             // 继续读取更多数据
-            status_analyze();
+            // status_analyze();
             async_read();
         } catch (std::exception& e) {
             std::cerr << "Exception in handle_read: " << e.what() << std::endl;
@@ -149,13 +149,6 @@ void Communication::async_read()
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
 }
-
-
-
-
-
-
-
 
 
 
@@ -188,7 +181,7 @@ void Communication::handle_query(const boost::system::error_code& error, std::si
 
 void Communication::timer_send()
 {
-    timer_.expires_from_now(boost::posix_time::milliseconds(50));
+    timer_.expires_from_now(boost::posix_time::milliseconds(20));
     timer_.async_wait(boost::bind(&Communication::handle_timeout, this, 
                       boost::asio::placeholders::error));
 
@@ -213,8 +206,9 @@ void Communication::handle_timeout(const boost::system::error_code& error)
 
 
 
-void Communication::status_analyze()
+RobotStatusMessage Communication::status_analyze()
 {
+    RobotStatusMessage robot_message;
     if (read_data_queue_.size() == 1 && first_read_flag){
         mutex_lock.lock();
         first_read_buffer_ptr_  = read_data_queue_.front().data();
@@ -247,6 +241,10 @@ void Communication::status_analyze()
         auto y = Byte_to_Float((now_read_buffer_ptr_ + Y_PTR_));
         auto theta = Byte_to_Float((now_read_buffer_ptr_ + THETA_PTR_));
 
+        if (abs(x)<1){ x = 0;}
+        if (abs(y)<1){ y = 0;}
+        if (abs(theta)<1){ theta = 0;}
+        
         robot_message.x = x/1000;
         robot_message.y = y/1000;
         robot_message.theta = theta;
@@ -269,7 +267,7 @@ void Communication::status_analyze()
         last_y_ = y;
         last_theta_ = theta;
 
-
+        return robot_message;
 
 
     }
