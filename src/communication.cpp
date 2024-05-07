@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-07 12:22:31
+ * @LastEditTime: 2024-05-07 16:46:10
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -86,7 +86,14 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
         try {
             // 从缓冲区中提取数据
             // std::cout << "Received data: " << read_buffer_.data() << std::endl;
-            
+            boost::asio::streambuf::const_buffers_type buffers = read_stream_bufbuffer_.data();
+            std::size_t size = read_stream_bufbuffer_.size(); // 读取的字节数
+            // std::cout << "读取的字节数: " << size << std::endl;
+
+
+            std::copy_n(boost::asio::buffer_cast<const char*>(buffers), size, read_buffer_.begin());
+
+
             boost::posix_time::ptime now_read_time = boost::posix_time::microsec_clock::universal_time();
             if (last_read_start_time_ != boost::posix_time::ptime()) {
                 boost::posix_time::time_duration diff = now_read_time - last_read_start_time_;
@@ -104,7 +111,7 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
                     std::array<char, 64> subarray_;
                     std::copy(read_buffer_.begin() + 20, read_buffer_.end(), subarray_.begin());
                     // std::cout << subarray_.size() << std::endl;
-                    // std::cout <<"subarray_.data()[3]"<< subarray_.data()[3] << std::endl;
+                    // std::cout << std::dec<<"电池电量："<< static_cast<int>(subarray_.data()[3]) << std::endl;
                     // std::cout <<"data_ptr"<< static_cast<int>(data_ptr[23]) << std::endl;
                     // std::cout <<"data_ptr"<< std::showbase << std::hex << static_cast<int>(data_ptr[23]) << std::endl;
                     mutex_lock.lock();
@@ -128,7 +135,7 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
             // std::cout << "bytes_transferred: " << bytes_transferred << std::endl;
 
             // 清空缓冲区以准备下一次读取
-
+            read_stream_bufbuffer_.consume(size);
             // 继续读取更多数据
             // status_analyze();
             async_read();
@@ -141,17 +148,27 @@ void Communication::handle_read(const boost::system::error_code& error, std::siz
     }
 }
 
+// void Communication::async_read()
+// {   
+//     last_read_start_time_ = boost::posix_time::microsec_clock::universal_time();
+//     // socket_.async_read_some(boost::asio::buffer(read_buffer_),
+//     socket_.async_read_some(boost::asio::buffer(read_buffer_),
+//             boost::bind(&Communication::handle_read, this,
+//             boost::asio::placeholders::error,
+//             boost::asio::placeholders::bytes_transferred));
+// }
+
+
 void Communication::async_read()
 {   
     last_read_start_time_ = boost::posix_time::microsec_clock::universal_time();
-    socket_.async_read_some(boost::asio::buffer(read_buffer_),
-            boost::bind(&Communication::handle_read, this,
+ // 使用 async_read 而不是 async_read_some
+    boost::asio::async_read(socket_, read_stream_bufbuffer_,
+        boost::asio::transfer_at_least(1),
+        boost::bind(&Communication::handle_read, this,
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
 }
-
-
-
 
 
 // 异步发送速度查询指令数据
@@ -181,7 +198,7 @@ void Communication::handle_query(const boost::system::error_code& error, std::si
 
 void Communication::timer_send()
 {
-    timer_.expires_from_now(boost::posix_time::milliseconds(20));
+    timer_.expires_from_now(boost::posix_time::milliseconds(50));
     timer_.async_wait(boost::bind(&Communication::handle_timeout, this, 
                       boost::asio::placeholders::error));
 
@@ -236,6 +253,7 @@ RobotStatusMessage Communication::status_analyze()
         read_data_queue_.pop();
         auto now_read_buffer_ptr_  = read_data_queue_.front().data();
         mutex_lock.unlock();
+
         
         auto x = Byte_to_Float((now_read_buffer_ptr_ + X_PTR_));
         auto y = Byte_to_Float((now_read_buffer_ptr_ + Y_PTR_));
@@ -244,22 +262,24 @@ RobotStatusMessage Communication::status_analyze()
         if (abs(x)<1){ x = 0;}
         if (abs(y)<1){ y = 0;}
         if (abs(theta)<1){ theta = 0;}
-        
-        robot_message.x = x/1000;
-        robot_message.y = y/1000;
+        // std::cout << std::dec << "y : " << y << " mm" << std::endl;
+        robot_message.x = x/1000.0f;
+        robot_message.y = y/1000.0f;
         robot_message.theta = theta;
         robot_message.v_x = (x-last_x_)/diff_time;
         robot_message.v_y = (y-last_y_)/diff_time;
-        robot_message.v_theta = (theta-last_theta_)/1000/diff_time;
+        robot_message.v_theta = (theta-last_theta_)*1000.0f/diff_time;
+
+        robot_message.Battery =  static_cast<int>(now_read_buffer_ptr_[3]);
 
 
 
-        std::cout << std::dec << "x: " << (x) << " mm" << std::endl;
-        std::cout << std::dec << "y: " << (y) << " mm" << std::endl;
-        std::cout << std::dec << "theta: " << (theta) << " rad" << std::endl;
-        std::cout << std::dec << "v_theta: " << (robot_message.v_theta) << " rad/s" << std::endl;
+        // std::cout << std::dec << "x: " << (x) << " mm" << std::endl;
+        // std::cout << std::dec << "robot_message.y : " << robot_message.y << " m" << std::endl;
+        // std::cout << std::dec << "theta: " << (theta) << " rad" << std::endl;
+        // std::cout << std::dec << "v_theta: " << (robot_message.v_theta) << " rad/s" << std::endl;
 
-        std::cout << std::dec << "Read interval: " << diff_time << " ms" << std::endl;
+        // std::cout << std::dec << "Read interval: " << diff_time << " ms" << std::endl;
 
 
         // std::cout << std::hex <<  now_read_buffer_ptr_[3] << std::endl;
@@ -275,28 +295,30 @@ RobotStatusMessage Communication::status_analyze()
 }
 
 
-// 大端模式
+// 小端模式
 float Communication::Byte_to_Float(const char *p)
 {
+
 	union {
             uint32_t i;
             float f;
         } float_union;
     float out_float;    
-    uint32_t longdata = (static_cast<uint32_t>(p[0]) << 24) |
-                        (static_cast<uint32_t>(p[1]) << 16) |
-                        (static_cast<uint32_t>(p[2]) << 8) |
-                            static_cast<uint32_t>(p[3]);
 
-    float_union.i = longdata; // 将整数赋值给union的整数成员
+    // uint32_t longdata = (static_cast<uint32_t>(p[3]) << 24) |
+    //                     (static_cast<uint32_t>(p[2]) << 16) |
+    //                     (static_cast<uint32_t>(p[1]) << 8) |
+    //                         static_cast<uint32_t>(p[0]);
 
+    // float_union.i = longdata; // 将整数赋值给union的整数成员
+    std::memcpy(&float_union.i, p, sizeof(float_union.i));
     
-    out_float = float_union.f;
-    return out_float; // 然后获取浮点数
+    // out_float = float_union.f;
+    return float_union.f; // 然后获取浮点数
 }
 
 
-// 大端模式
+
 std::vector<unsigned char> Communication::Float_to_Byte(const float f) {
  // 使用union来避免违反严格别名规则
     union {
@@ -312,7 +334,8 @@ std::vector<unsigned char> Communication::Float_to_Byte(const float f) {
 
     // 将union的bytes数组内容复制到vector中
     for (int i = 0; i < 4; ++i) {
-        bytes.push_back(floatUnion.bytes[3-i]);
+        // bytes.push_back(floatUnion.bytes[3-i]);
+        bytes.push_back(floatUnion.bytes[i]); // 小端模式
     }
 
     return bytes;

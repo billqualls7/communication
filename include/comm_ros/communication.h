@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:35:46
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-07 11:15:39
+ * @LastEditTime: 2024-05-07 16:02:55
  * @FilePath: /code/communication/include/communication.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -134,7 +134,26 @@ class Communication
 private:
     /* data */
 
-    std::vector<unsigned char> query_data = {0x05, 0x0A, 0x05, 0x0A, 0x01, 0x03, 0x09, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        std::vector<unsigned char> query_data = {   0x05, 0x0A, 0x05, 0x0A, 
+                                                    0x01, 
+                                                    0x03, 0x09, 0x00, 0x00, 
+                                                    0x00, 0x00, 
+                                                    0x01, 0x00, 
+                                                    0x01, 
+                                                    0x00, 
+                                                    0x00, 0x00, 0x00, 0x00, 
+                                                    0x00};
+                                                    
+    std::vector<unsigned char> roscontrl_data = {   0x05, 0x0A, 0x05, 0x0A, 
+                                                    0x01, 
+                                                    0x17, 0X0A, 0x00, 0x00, 
+                                                    0x01, 0x00, 
+                                                    0x01, 0x00,
+                                                    0x01, 
+                                                    0x01, 
+                                                    0x00, 0x00, 0x00, 0x00, 
+                                                    0x1C,
+                                                    0X01};
     deadline_timer timer_;
     boost::posix_time::ptime last_read_start_time_;
     int diff_time;
@@ -146,6 +165,8 @@ private:
     float last_y_;
     float last_theta_;
 
+
+    std::size_t bytes_to_read = 57;
 
     void do_connect(const std::string& host, const std::string& port);
     void handle_resolve(const boost::system::error_code& error, 
@@ -171,6 +192,8 @@ public:
     std::array<char, 64> last_read_buffer_;
     char* first_read_buffer_ptr_;
     std::array<char, 64> read_buffer_;
+    boost::asio::streambuf read_stream_bufbuffer_;
+
     std::queue<std::array<char, 64>> read_data_queue_;
     std::mutex mutex_lock;
     

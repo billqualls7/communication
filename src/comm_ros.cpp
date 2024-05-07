@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-05-06 16:58:34
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-07 12:22:13
+ * @LastEditTime: 2024-05-07 16:50:44
  * @FilePath: /communication/src/comm_ros.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -24,8 +24,8 @@ ros::Publisher odompub;
 Send_VelMessage SendCmdVel;
 RobotStatusMessage robot_message;
 
-// std::string IPaddress = "192.168.0.140";
-std::string IPaddress = "192.168.51.114";
+std::string IPaddress = "192.168.0.140";
+// std::string IPaddress = "192.168.51.114";
 std::string port = "1234";
 boost::asio::io_service io_service;
 Communication TCPComm(io_service, IPaddress, port);
@@ -53,9 +53,9 @@ void Wheel4RobotComm_send()
             mutex_lock.lock();
             geometry_msgs::Twist::ConstPtr vel = velBuf.front();
 
-            SendCmdVel.v_x = vel->linear.x;
-            SendCmdVel.v_y = vel->linear.y;
-            SendCmdVel.v_theta = vel->angular.z;
+            SendCmdVel.v_x = (vel->linear.x)*1000;
+            SendCmdVel.v_y = (vel->linear.y)*1000;
+            SendCmdVel.v_theta = (vel->angular.z);
 
             velBuf.pop();
             mutex_lock.unlock();
@@ -84,7 +84,7 @@ void Wheel4RobotComm_read()
 
         robot_message = TCPComm.status_analyze();
         // std::cout << std::dec << "x: " << (robot_message.x) << " mm" << std::endl;
-        // std::cout << std::dec << "y: " << (robot_message.y) << " mm" << std::endl;
+        // std::cout << std::dec << "v_y: " << (robot_message.v_y) << " m/s" << std::endl;
         // std::cout << std::dec << "theta: " << (robot_message.theta) << " rad" << std::endl;
         // std::cout << std::dec << "v_theta: " << (robot_message.v_theta) << " rad/s" << std::endl;
 
@@ -101,14 +101,14 @@ void Wheel4RobotComm_read()
         auto q = tf::createQuaternionFromYaw(theta_rad);
         q.normalize();
         Odom.header.stamp = ros::Time::now();
-        Odom.pose.pose.position.x = robot_message.x;
-        Odom.pose.pose.position.y = robot_message.y;
+        Odom.pose.pose.position.x = robot_message.y;
+        Odom.pose.pose.position.y = robot_message.x;
         Odom.pose.pose.position.z = 0;
         tf::quaternionTFToMsg(q, Odom.pose.pose.orientation);
 
         
-        Odom.twist.twist.linear.x = robot_message.v_x;
-        Odom.twist.twist.linear.y = robot_message.v_y;
+        Odom.twist.twist.linear.x = robot_message.v_y;
+        Odom.twist.twist.linear.y = robot_message.v_x;
         Odom.twist.twist.angular.z = robot_message.v_theta;
 
         odompub.publish(Odom);
