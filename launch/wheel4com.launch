@@ -1,0 +1,6 @@
+<launch>
+    <!-- 定义要运行的节点 -->
+    <node name="comm_ros" pkg="comm_ros" type="comm_ros" output="screen" >
+        <!-- 如果需要，你可以在这里添加节点的参数、remappings等 -->
+    </node>
+</launch>

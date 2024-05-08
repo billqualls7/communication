@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-05-06 16:58:34
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-08 13:36:16
+ * @LastEditTime: 2024-05-08 16:43:31
  * @FilePath: /communication/src/comm_ros.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -13,9 +13,9 @@
 #include <thread>
 #include <chrono>
 #include "ros/ros.h"
-#include "geometry_msgs/Twist.h"
-#include "nav_msgs/Odometry.h"
 #include "communication.h"
+#include "nav_msgs/Odometry.h"
+#include "geometry_msgs/Twist.h"
 #include <tf/transform_datatypes.h>
 
 std::mutex mutex_lock;
@@ -76,7 +76,7 @@ void Wheel4RobotComm_send()
 
 void Wheel4RobotComm_read()
 {   
-    ros::Rate rate(50.0);
+    ros::Rate rate(20.0);
     nav_msgs::Odometry Odom;
     Odom.header.frame_id = "/odom";
     Odom.child_frame_id = "/base_link";
