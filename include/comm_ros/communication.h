@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:35:46
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-07 16:02:55
+ * @LastEditTime: 2024-05-08 13:36:00
  * @FilePath: /code/communication/include/communication.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -50,9 +50,9 @@ struct RobotStatusMessage
     int32_t Wheel_3_Enconder;
     int32_t Wheel_4_Enconder;
 
-    float x;           
-    float y;
-    float theta; 
+    float x = 0;           
+    float y = 0;
+    float theta = 0; 
 
     uint8_t PositioningStatus;
     uint8_t MotionMode ;
@@ -165,6 +165,9 @@ private:
     float last_y_;
     float last_theta_;
 
+    float detal_last_x_;
+    float detal_last_y_;
+    float detal_last_theta_;
 
     std::size_t bytes_to_read = 57;
 
@@ -202,7 +205,7 @@ public:
     Communication(boost::asio::io_service& io_service, const std::string& host, const std::string& port);
     ~Communication();
     void async_read();
-    RobotStatusMessage status_analyze();
+    void status_analyze(RobotStatusMessage& robot_message);
     unsigned char xorChecksum(const std::vector<unsigned char>& data);
     std::vector<unsigned char> concatenateKnownLengthVectors(const std::vector<std::vector<unsigned char>>& vecs, size_t totalLength);
     void ConsistTCPMessageVel(const Send_VelMessage& sendvelmsg);

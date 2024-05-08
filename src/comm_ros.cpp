@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-05-06 16:58:34
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-07 16:50:44
+ * @LastEditTime: 2024-05-08 13:36:16
  * @FilePath: /communication/src/comm_ros.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -82,7 +82,7 @@ void Wheel4RobotComm_read()
     Odom.child_frame_id = "/base_link";
     while (ros::ok()){
 
-        robot_message = TCPComm.status_analyze();
+        TCPComm.status_analyze(robot_message);
         // std::cout << std::dec << "x: " << (robot_message.x) << " mm" << std::endl;
         // std::cout << std::dec << "v_y: " << (robot_message.v_y) << " m/s" << std::endl;
         // std::cout << std::dec << "theta: " << (robot_message.theta) << " rad" << std::endl;
@@ -101,14 +101,14 @@ void Wheel4RobotComm_read()
         auto q = tf::createQuaternionFromYaw(theta_rad);
         q.normalize();
         Odom.header.stamp = ros::Time::now();
-        Odom.pose.pose.position.x = robot_message.y;
-        Odom.pose.pose.position.y = robot_message.x;
+        Odom.pose.pose.position.x = robot_message.x;
+        Odom.pose.pose.position.y = robot_message.y;
         Odom.pose.pose.position.z = 0;
         tf::quaternionTFToMsg(q, Odom.pose.pose.orientation);
 
         
-        Odom.twist.twist.linear.x = robot_message.v_y;
-        Odom.twist.twist.linear.y = robot_message.v_x;
+        Odom.twist.twist.linear.x = robot_message.v_x;
+        Odom.twist.twist.linear.y = robot_message.v_y;
         Odom.twist.twist.angular.z = robot_message.v_theta;
 
         odompub.publish(Odom);

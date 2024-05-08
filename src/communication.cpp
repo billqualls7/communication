@@ -2,7 +2,7 @@
  * @Author: wuyao 1955416359@qq.com
  * @Date: 2024-04-24 19:32:55
  * @LastEditors: wuyao 1955416359@qq.com
- * @LastEditTime: 2024-05-07 16:46:10
+ * @LastEditTime: 2024-05-08 13:36:03
  * @FilePath: /communication/src/communication.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -222,10 +222,9 @@ void Communication::handle_timeout(const boost::system::error_code& error)
 }
 
 
-
-RobotStatusMessage Communication::status_analyze()
+void Communication::status_analyze(RobotStatusMessage& robot_message)
 {
-    RobotStatusMessage robot_message;
+    
     if (read_data_queue_.size() == 1 && first_read_flag){
         mutex_lock.lock();
         first_read_buffer_ptr_  = read_data_queue_.front().data();
@@ -262,10 +261,17 @@ RobotStatusMessage Communication::status_analyze()
         if (abs(x)<1){ x = 0;}
         if (abs(y)<1){ y = 0;}
         if (abs(theta)<1){ theta = 0;}
+
+        auto detal_x = (x-last_x_)/1000.0f;
+        auto detal_y = (y-last_y_)/1000.0f;
+        auto datal_theta = theta-last_theta_;
+
+
         // std::cout << std::dec << "y : " << y << " mm" << std::endl;
-        robot_message.x = x/1000.0f;
-        robot_message.y = y/1000.0f;
-        robot_message.theta = theta;
+        robot_message.x +=detal_x;
+        robot_message.y += detal_y;
+        robot_message.theta += datal_theta;
+
         robot_message.v_x = (x-last_x_)/diff_time;
         robot_message.v_y = (y-last_y_)/diff_time;
         robot_message.v_theta = (theta-last_theta_)*1000.0f/diff_time;
@@ -287,7 +293,7 @@ RobotStatusMessage Communication::status_analyze()
         last_y_ = y;
         last_theta_ = theta;
 
-        return robot_message;
+        // return robot_message;
 
 
     }
